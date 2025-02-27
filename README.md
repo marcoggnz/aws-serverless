@@ -1,4 +1,4 @@
-# Práctica Introducción a AWS
+# Diseño e implementación de una web de anuncios en AWS
 
 ## Arquitectura General
 <strong>Backend (Serverless)</strong>:
