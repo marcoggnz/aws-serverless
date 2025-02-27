@@ -21,3 +21,10 @@
 3) Base de Datos DynamoDB
 
 4) Almacenamiento de Imágenes en S3
+
+5) Autenticación con Cognito
+
+6) Implementación de la Caducidad de Anuncios
+
+## Automatización y Minimización de Costes
+7) Minimización de Costes
