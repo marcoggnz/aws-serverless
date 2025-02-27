@@ -64,7 +64,7 @@ El diagrama de arquitectura podría tener los siguientes componentes:
 - Cognito: Maneja la autenticación de usuarios.
 - CloudWatch: Monitorea la actividad y los logs.
 
-![Architecture diagram][https://github.com/srinivas-polina/Spotify-end-to-end-dataengineering-projects/blob/main/architecture%20diagram.png](https://github.com/marcoggnz/datahack/blob/main/AWSarchitectura-redes.jpg)
+![Architecture diagram](https://github.com/marcoggnz/datahack/blob/main/AWSarchitectura-redes.jpg)
 
 ## Despliegue de la Solución
 Para facilitar el despliegue, puedes usar AWS SAM (Serverless Application Model) o CloudFormation para crear la infraestructura automáticamente desde el código fuente del repositorio.
