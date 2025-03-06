@@ -3,9 +3,9 @@
 ## Arquitectura General
 <strong>Backend (Serverless)</strong>:
 - <strong>API Gateway</strong>: gestión de peticiones HTTP y punto de entrada para todas las interacciones (listar anuncios, ver detalles, publicar anuncios, enviar comentarios, ...) de la aplicación web. Es un servicio totalmente gestionado que permite crear y publicar APIs sin necesidad de gestionar servidores.
-- <strong>AWS Lambda</strong>: ejecución de la lógica de negocio. Cda endpoint (listar anuncio, publicar anuncio, ...) de la API tiene una función Lambda asociada que procesa la solicitud, interactúa con la base de datos y devuelve la respuesta al usuario.
-- <strong>Amazon DynamoDB</strong>: alberga la base de datos NoSQL para almacenar la información de los anuncios, los cmentarios y la información de los usuarios. DynamoDB es una base de datos totalmente gestionada, escalable y de bajo coste, lo que la hace ideal para este tipo de aplicaciones.
-- <strong>Amazon S3</strong>: almacena las imágenes asociadas a los anuncios, por ejemplo, fotos de productos. S3 es un servicio de almacenamiento deobjetos que puede escalar fácilmente y es muy económico para almecenar imágenes.
+- <strong>AWS Lambda</strong>: ejecución de la lógica de negocio. Cada endpoint (listar anuncio, publicar anuncio, ...) de la API tiene una función Lambda asociada que procesa la solicitud, interactúa con la base de datos y devuelve la respuesta al usuario.
+- <strong>Amazon DynamoDB</strong>: alberga la base de datos NoSQL para almacenar la información de los anuncios, los comentarios y la información de los usuarios. DynamoDB es una base de datos totalmente gestionada, escalable y de bajo coste, lo que la hace ideal para este tipo de aplicaciones.
+- <strong>Amazon S3</strong>: almacena las imágenes asociadas a los anuncios, por ejemplo, fotos de productos. S3 es un servicio de almacenamiento de objetos que puede escalar fácilmente y es muy económico para almacenar imágenes.
 - <strong>Amazon Cognito</strong>: servicio para autenticación y control de accesos. Cognito se integra con el backend para permitir que los usuarios puedan registrarse, iniciar sesión y controlar el acceso a las funcionalidades de publicación de anuncios.
 - <strong>Amazon CloudWatch</strong>: servicio utilizado para monitorización de las funciones Lambda, visualización de logs y seguimiento del rendimiento de la aplicación.
 
@@ -20,17 +20,17 @@ Desarrollar una interfaz web en la que se puedan listar los anuncios, ver los de
 2) API Gateway y Lambda
 Crear las siguientes rutas en API Gateway:
 - GET /ads: Devuelve todos los anuncios desde DynamoDB.
-- GET /ads/{id}: Devuelve el detalle de un anuncio específico.
+- GET /ads/{ad_id}: Devuelve el detalle de un anuncio específico.
 - POST /ads: Permite crear un nuevo anuncio.
-- POST /ads/{id}/comments: Permite agregar un comentario a un anuncio.
+- POST /ads/{ad_id}/comments: Permite agregar un comentario a un anuncio.
 - Para cada ruta, se asigna una función Lambda que interactúa con la base de datos y procesa la información según corresponda.
 Ejemplo de funciones Lambda:
-- Lambda listar anuncios: Recoge todos los anuncios desde DynamoDB y los devuelve al frontend.
-- Lambda publicar anuncio: Recibe el cuerpo del anuncio (título, descripción, precio, etc.), lo valida y lo guarda en DynamoDB.
-- Lambda agregar comentario: Agrega un comentario al anuncio correspondiente en DynamoDB.
+- Lambda listar anuncios: recoge todos los anuncios desde DynamoDB y los devuelve al frontend.
+- Lambda publicar anuncio: recibe el cuerpo del anuncio (título, descripción, precio, etc.), lo valida y lo guarda en DynamoDB.
+- Lambda agregar comentario: agrega un comentario al anuncio correspondiente en DynamoDB.
 
 3) Base de Datos DynamoDB
-Se puede crear una tabla llamada Anuncios en DynamoDB. Cada anuncio tendrá un ID único y los comentarios estarán relacionados con el ID de cada anuncio.
+Se puede crear una tabla llamada "ads" en DynamoDB. Cada anuncio tendrá un ID único (ad_id) y los comentarios estarán relacionados con el ID de cada anuncio.
 Estructura de la tabla DynamoDB:
 - Partición de claves: ad_id para identificar un anuncio.
 - Atributos: title, description, price, created_at, comments (array de comentarios), etc.
@@ -55,7 +55,7 @@ La caducidad de los anuncios se puede manejar de las siguientes maneras:
 - S3 solo cobra por el almacenamiento real utilizado y las solicitudes realizadas, lo que resulta en costos muy bajos.
 
 ## Diagrama de Arquitectura
-El diagrama de arquitectura podría tener los siguientes componentes:
+El diagrama de arquitectura tiene los siguientes componentes:
 - Frontend: Almacenado en S3.
 - API Gateway: Gestiona las solicitudes HTTP.
 - Lambda: Procesa las solicitudes y maneja la lógica del backend.
