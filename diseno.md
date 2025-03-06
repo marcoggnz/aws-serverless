@@ -76,3 +76,9 @@ Tabla <strong>CHAT</strong>: almacena los mensajes de un chat
 `GET /chats`: mostrado de los chats
 
 `GET /chats/{chat_id}`: mostrado de todos los mensajes de un chat
+
+## Pasos a seguir
+1) Creación de las 3 tablas DynamoDB
+2) Creación de un bucket de S3 para alojar las imágenes de los anuncios
+3) Creación de una policy y un rol para las funciones Lambda
+4) Creación de las funciones Lambda incluyendo el rol anteriormente creado
