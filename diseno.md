@@ -1,6 +1,6 @@
 # Diseño de la aplicación
 
-##Bases de datos en DynamoDB
+## Bases de datos en DynamoDB
 
 Tabla <strong>ads</strong>: almacena los anuncios publicados
 - PK: `ad_id` (string): ID del anuncio (PARTITION KEY)
@@ -61,7 +61,7 @@ Tabla <strong>CHAT</strong>: almacena los mensajes de un chat
 }
 ```
 
-##Rest API
+## Rest API
 
 `POST /ads`: creación de un anuncio
 
