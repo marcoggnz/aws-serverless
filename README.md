@@ -1,81 +1,50 @@
 # Diseño e implementación de una web de anuncios en AWS
 
+Este repositorio muestra el backend de una aplicación serverless de una web de publicación de anuncios utilizando servicios de AWS.
+
+## Manual de despliegue
+
+Se ha intentado automatizar el despliegue de la aplicación. Para ello hay que previamente preparar el entorno.
+1) Instalación de AWS CLI (si no se ha instalado previamente):
+```bash
+pip install awscli --upgrade --user
+```
+2) Confirmación de que la instalación de ha realizado correctamente:
+```bash
+aws --version
+```
+3) Instalación del plugin Serverless S3 Sync:
+```bash
+npm --save install serverless
+```
+4) Instalación del plugin Serverless Finch:
+```bash
+npm install --save serverless-finch
+```
+5) Configuración de la consola AWS CLI con los correspondientes datos de la cuenta de AWS que se va a utilizar:
+```bash
+aws configure
+```
+6) A continuación debverán introducirse los siguientes datos que se encuentran en la cuenta de AWS:
+- Access Key
+- Secret Key
+- Región de AWS donde se quiere trabajar
+7) Despliegue de la aplicación:
+```bash
+sls deploy
+sls client deploy
+```
+8) Mostrado de información del depsliegue realizado:
+```bash
+sls info
+```
+9) Cierre del depliegue cuando se quiera terminar:
+```bash
+sls remove
+```
+   
+
 ## Arquitectura General
-<strong>Backend (Serverless)</strong>:
-- <strong>API Gateway</strong>: gestión de peticiones HTTP y punto de entrada para todas las interacciones (listar anuncios, ver detalles, publicar anuncios, enviar comentarios, ...) de la aplicación web. Es un servicio totalmente gestionado que permite crear y publicar APIs sin necesidad de gestionar servidores.
-- <strong>AWS Lambda</strong>: ejecución de la lógica de negocio. Cada endpoint (listar anuncio, publicar anuncio, ...) de la API tiene una función Lambda asociada que procesa la solicitud, interactúa con la base de datos y devuelve la respuesta al usuario.
-- <strong>Amazon DynamoDB</strong>: alberga la base de datos NoSQL para almacenar la información de los anuncios, los comentarios y la información de los usuarios. DynamoDB es una base de datos totalmente gestionada, escalable y de bajo coste, lo que la hace ideal para este tipo de aplicaciones.
-- <strong>Amazon S3</strong>: almacena las imágenes asociadas a los anuncios, por ejemplo, fotos de productos. S3 es un servicio de almacenamiento de objetos que puede escalar fácilmente y es muy económico para almacenar imágenes.
-- <strong>Amazon Cognito</strong>: servicio para autenticación y control de accesos. Cognito se integra con el backend para permitir que los usuarios puedan registrarse, iniciar sesión y controlar el acceso a las funcionalidades de publicación de anuncios.
-- <strong>Amazon CloudWatch</strong>: servicio utilizado para monitorización de las funciones Lambda, visualización de logs y seguimiento del rendimiento de la aplicación.
-
-<strong>Frontend (Interfaz Web)</strong>:
-- Amazon S3 (hosting estático): alojamiento del frontend estático, desarrollado en HTML. S3 tiene un bajo coste y es ideal para hosting de sitios estáticos.
-- Amazon CloudFront: puede ser utilizado como red de distribución de contenido (CDN) para mejorar la entrega de contenido estático (imágenes, CSS, JS) a los usuarios.
-
-## Flujo de Trabajo y Servicios Detallados
-1) Creación del frontend (HTML)
-Desarrollar una interfaz web en la que se puedan listar los anuncios, ver los detalles de un anuncio, permitir la publicación de anuncios, interactuar con los comentarios, y subir imágenes (si es necesario). Este frontend puede ser un sitio web estático con un formulario de contacto, listado de anuncios, y detalles de cada uno.
-
-2) API Gateway y Lambda
-Crear las siguientes rutas en API Gateway:
-- GET /ads: Devuelve todos los anuncios desde DynamoDB.
-- GET /ads/{ad_id}: Devuelve el detalle de un anuncio específico.
-- POST /ads: Permite crear un nuevo anuncio.
-- POST /ads/{ad_id}/comments: Permite agregar un comentario a un anuncio.
-- Para cada ruta, se asigna una función Lambda que interactúa con la base de datos y procesa la información según corresponda.
-Ejemplo de funciones Lambda:
-- Lambda listar anuncios: recoge todos los anuncios desde DynamoDB y los devuelve al frontend.
-- Lambda publicar anuncio: recibe el cuerpo del anuncio (título, descripción, precio, etc.), lo valida y lo guarda en DynamoDB.
-- Lambda agregar comentario: agrega un comentario al anuncio correspondiente en DynamoDB.
-
-3) Base de Datos DynamoDB
-Se puede crear una tabla llamada "ads" en DynamoDB. Cada anuncio tendrá un ID único (ad_id) y los comentarios estarán relacionados con el ID de cada anuncio.
-Estructura de la tabla DynamoDB:
-- Partición de claves: ad_id para identificar un anuncio.
-- Atributos: title, description, price, created_at, comments (array de comentarios), etc.
-- Utilizamos DynamoDB Streams para que los nuevos anuncios sean indexados de manera eficiente.
-
-4) Almacenamiento de Imágenes en S3
-Cuando un usuario publica un anuncio con una imagen, la imagen se sube a un bucket S3 asociado. El enlace de la imagen se guarda junto con el anuncio en DynamoDB.
-Se puede usar una política en S3 para controlar los permisos de acceso, de manera que solo se permita la lectura pública de las imágenes.
-
-5) Autenticación con Cognito
-Usamos Amazon Cognito para la gestión de usuarios, permitiendo que se registren, inicien sesión y publiquen anuncios. Cognito se puede configurar para proporcionar tokens de autenticación que se usarán en las peticiones al backend (API Gateway).
-
-7) Implementación de la Caducidad de Anuncios
-La caducidad de los anuncios se puede manejar de las siguientes maneras:
-- TTL (Time To Live) en DynamoDB: Usar la característica TTL de DynamoDB para eliminar automáticamente los anuncios después de un período determinado (por ejemplo, 30 días).
-- Lambda Scheduled: Usar AWS Lambda con CloudWatch Events para eliminar los anuncios caducados.
-
-## Automatización y Minimización de Costes
-7) Minimización de Costes
-- Uso de funciones Lambda para procesar las solicitudes en lugar de instancias EC2. Lambda solo se ejecuta cuando se necesita, lo que elimina los costos de infraestructura cuando no hay tráfico.
-- DynamoDB permite escalar automáticamente según el tráfico, y el modelo de precios basado en operaciones es económico cuando no hay muchas solicitudes.
-- S3 solo cobra por el almacenamiento real utilizado y las solicitudes realizadas, lo que resulta en costos muy bajos.
-
-## Diagrama de Arquitectura
-El diagrama de arquitectura tiene los siguientes componentes:
-- Frontend: Almacenado en S3.
-- API Gateway: Gestiona las solicitudes HTTP.
-- Lambda: Procesa las solicitudes y maneja la lógica del backend.
-- DynamoDB: Almacena los anuncios y los comentarios.
-- S3: Almacena las imágenes.
-- Cognito: Maneja la autenticación de usuarios.
-- CloudWatch: Monitorea la actividad y los logs.
+Se ha tratado de utilizar servicios serverless con el fin de minimizar costes operativos cuando la aplicación se encuentra en reposo. A continuación se muestra el diagrama de architectura de la aplicación, aunque algunos de los servicios que aparecen, no han sido implementados. Para más detalles sobre la arquitectura, ver el documento "Diseño de architectura" de la carpeta /doc.
 
 ![Architecture diagram](https://github.com/marcoggnz/datahack/blob/main/AWSarchitectura-redes.jpg)
-
-## Despliegue de la Solución
-Para facilitar el despliegue, puedes usar AWS SAM (Serverless Application Model) o CloudFormation para crear la infraestructura automáticamente desde el código fuente del repositorio.
-
-## Pruebas y Validación
-Antes de entregar la solución, asegúrate de incluir pruebas unitarias para las funciones Lambda y pruebas de integración para los endpoints del API Gateway.
-
-## Documentación
-La documentación debe incluir:
-
-- Diagrama de arquitectura detallado con explicación de cada servicio.
-- Manual de despliegue paso a paso para configurar el sistema desde cero.
-- Justificación de las decisiones tecnológicas tomadas.
-- Instrucciones para pruebas e integración.
