@@ -1,5 +1,7 @@
 # Diseño de la aplicación
 
+![Architecture diagram](images/AWSarchitectura-redes.jpg)
+
 ## Servicios utilizados
 <strong>Backend (Serverless)</strong>:
 - <strong>API Gateway</strong>: gestión de peticiones HTTP y punto de entrada para todas las interacciones (listar anuncios, ver detalles, publicar anuncios, enviar comentarios, ...) de la aplicación web. Es un servicio totalmente gestionado que permite crear y publicar APIs sin necesidad de gestionar servidores.
