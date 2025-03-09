@@ -47,4 +47,4 @@ sls remove
 ## Arquitectura General
 Se ha tratado de utilizar servicios serverless con el fin de minimizar costes operativos cuando la aplicación se encuentra en reposo. A continuación se muestra el diagrama de architectura de la aplicación, aunque algunos de los servicios que aparecen, no han sido implementados. Para más detalles sobre la arquitectura, ver el documento "Diseño de architectura" de la carpeta /doc.
 
-![Architecture diagram](images/https://github.com/marcoggnz/datahack/blob/main/AWSarchitectura-redes.jpg)
+![Architecture diagram](images/AWSarchitectura-redes.jpg)
