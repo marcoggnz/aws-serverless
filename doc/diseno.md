@@ -1,6 +1,6 @@
 # Diseño de la aplicación
 
-[https://github.com/marcoggnz/aws-serverless/blob/main/images/AWSarchitectura-redes.jpg](https://github.com/marcoggnz/aws-serverless/blob/main/images/AWSarchitectura-redes.jpg)
+![Architecture diagram](images/AWSarchitectura-redes.jpg)
 
 ## Servicios utilizados
 <strong>Backend (Serverless)</strong>:
