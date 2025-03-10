@@ -23,16 +23,16 @@ def get_api_endpoint(event, context):
             'body': json.dumps({'error': str(e)})
         }
 
-def insert_message(event, context):
+def create_comment(event, context):
     try:
-        table_msg = dynamodb.Table('datahack-mensajes')
+        table_comments = dynamodb.Table('messages')
 
         body = json.loads(event['body'])
         user = body['user']
         message = body['message']
         date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        response = table_msg.put_item(
+        response = table_comments.put_item(
             Item={
                 'user': user,
                 'message': message,
@@ -42,7 +42,7 @@ def insert_message(event, context):
 
         return {
             'statusCode': 200,
-            'body': json.dumps({'message': 'Mensaje de ' + user + ' insertado correctamente'})
+            'body': json.dumps({'message': 'Message from ' + user + ' succesfully published'})
         }
     except Exception as e:
         return {
@@ -50,15 +50,15 @@ def insert_message(event, context):
             'body': json.dumps({'error': str(e)})
         }
 
-def get_messages(event, context):
+def get_comments(event, context):
     try:
-        table_msg = dynamodb.Table('datahack-mensajes')
+        table_comments = dynamodb.Table('messages')
 
-        response = table_msg.scan()
+        response = table_comments.scan()
         data = response['Items']
         
         while 'LastEvaluatedKey' in response:
-            response = table_msg.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
+            response = table_comments.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
             data.extend(response['Items'])
 
         return {
@@ -71,9 +71,9 @@ def get_messages(event, context):
             'body': json.dumps({'error': str(e)})
         }
 
-def insert_product(event, context):
+def create_ad(event, context):
     try:
-        table_pro = dynamodb.Table('datahack-productos')
+        table_ads = dynamodb.Table('ads')
 
         body = json.loads(event['body'])
         user = body['user']
@@ -81,7 +81,7 @@ def insert_product(event, context):
         description = body['description']
         date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        response = table_pro.put_item(
+        response = table_ads.put_item(
             Item={
                 'user': user,
                 'product': product,
@@ -92,7 +92,7 @@ def insert_product(event, context):
 
         return {
             'statusCode': 200,
-            'body': json.dumps({'product': 'Producto de ' + user + ' insertado correctamente'})
+            'body': json.dumps({'product': 'Advertisement from ' + user + ' succesfully published.'})
         }
     except Exception as e:
         return {
@@ -100,15 +100,15 @@ def insert_product(event, context):
             'body': json.dumps({'error': str(e)})
         }
 
-def get_products(event, context):
+def list_ads(event, context):
     try:
-        table_pro = dynamodb.Table('datahack-productos')
+        table_ads = dynamodb.Table('ads')
 
-        response = table_pro.scan()
+        response = table_ads.scan()
         data = response['Items']
         
         while 'LastEvaluatedKey' in response:
-            response = table_pro.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
+            response = table_ads.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
             data.extend(response['Items'])
 
         return {
