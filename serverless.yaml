@@ -1,4 +1,4 @@
-service: aws-serverless
+service: aws-serverless25
 
 provider:
   name: aws
@@ -37,7 +37,7 @@ custom:
       API_ENDPOINT: ${self:provider.environment.API_ENDPOINT}
 
   client:
-    bucketName: web-serverless25
+    bucketName: aws-serverless25
     distributionFolder: web
     errorDocument: index.html
     include:
@@ -45,7 +45,7 @@ custom:
       - '*.css'
       - '*.js'
   s3Sync:
-    - bucketName: web-serverless25
+    - bucketName: aws-serverless25
       localDir: web
 
 functions:
@@ -120,7 +120,7 @@ resources:
     StaticSiteBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: datahack-cloud
+        BucketName: aws-serverless25
         PublicAccessBlockConfiguration:
           BlockPublicAcls: false
           BlockPublicPolicy: false
@@ -173,12 +173,12 @@ resources:
             - Effect: Allow
               Principal: "*"
               Action: "s3:GetObject"
-              Resource: "arn:aws:s3:::datahack-cloud/*"
+              Resource: "arn:aws:s3:::aws-serverless25/*"
 
-    MessagesTable:
+    CommentsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: datahack-mensajes
+        TableName: comments
         AttributeDefinitions:
           - AttributeName: user
             AttributeType: S
@@ -192,10 +192,10 @@ resources:
         BillingMode: PAY_PER_REQUEST
       UpdateReplacePolicy: Retain
 
-    ProductsTable:
+    AdsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: datahack-productos
+        TableName: ads
         AttributeDefinitions:
           - AttributeName: user
             AttributeType: S
