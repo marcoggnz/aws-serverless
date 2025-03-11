@@ -113,7 +113,7 @@ CloudFront ofrece características avanzadas como la configuración de caché, l
 
 <strong>Amazon Route 53</strong>: es el servicio de DNS de AWS, que  permite gestionar el enrutamiento de tráfico en Internet hacia la aplicación.
 Implementación:
-Si se necesita asociar el dominio personalizado (por ejemplo, www.tuweb.com) a la aplicación, se usaría Route 53 para configurar los registros DNS.
+Si se necesita asociar el dominio personalizado a la aplicación, se usaría Route 53 para configurar los registros DNS.
 Además, se puede utilizar Route 53 para crear políticas de enrutamiento basadas en geolocalización o en la latencia de la red, lo que  permite dirigir a los usuarios a la instancia más cercana de tu aplicación.
 
 ### Caducidad automática de anuncios
