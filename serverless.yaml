@@ -9,6 +9,9 @@ provider:
     API_ENDPOINT: "https://${ApiGatewayRestApi}.execute-api.${AWS::Region}.amazonaws.com/${self:provider.stage}"
     CommentsTable: comments
     AdsTable: ads
+    ChatsTable: chats
+    ImagesBucket: aws-serverless25-images
+    StaticSiteBucket: aws-serverless25-frontend
 
   iam:
     role:
@@ -25,6 +28,15 @@ provider:
           Resource:
             - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.CommentsTable}"
             - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.AdsTable}"
+            - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.ChatsTable}"
+        - Effect: "Allow"
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+            - s3:DeleteObject
+          Resource:
+            - "arn:aws:s3:::${self:provider.environment.ImagesBucket}/*"
+            - "arn:aws:s3:::${self:provider.environment.StaticSiteBucket}/*"
 
 plugins:
   - serverless-s3-sync
@@ -37,7 +49,7 @@ custom:
       API_ENDPOINT: ${self:provider.environment.API_ENDPOINT}
 
   client:
-    bucketName: aws-serverless25
+    bucketName: aws-serverless25-frontend
     distributionFolder: web
     errorDocument: index.html
     include:
@@ -45,8 +57,79 @@ custom:
       - '*.css'
       - '*.js'
   s3Sync:
-    - bucketName: aws-serverless25
+    - bucketName: aws-serverless25-frontend
       localDir: web
+
+resources:
+  Resources:
+    ApiGatewayRestApi:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Name: ${self:provider.stage}-api-datahack
+        Description: API ${self:service}
+
+    StaticSiteBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: aws-serverless25-frontend
+        WebsiteConfiguration:
+          IndexDocument: index.html
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+
+    ImagesBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: aws-serverless25-images
+        VersioningConfiguration:
+          Status: Enabled
+
+    CommentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: comments
+        AttributeDefinitions:
+          - AttributeName: ad_id
+            AttributeType: S
+          - AttributeName: comment_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: ad_id
+            KeyType: HASH
+          - AttributeName: comment_id
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+
+    AdsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ads
+        AttributeDefinitions:
+          - AttributeName: ad_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: ad_id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    ChatsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: chats
+        AttributeDefinitions:
+          - AttributeName: ad_id
+            AttributeType: S
+          - AttributeName: chat_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: ad_id
+            KeyType: HASH
+          - AttributeName: chat_id
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
 
 functions:
   getApiEndpoint:
@@ -62,11 +145,11 @@ functions:
               - Content-Type
             allowCredentials: false
 
-  insertMessage:
-    handler: handler.insert_message
+  createAd:
+    handler: handler.create_ad
     events:
       - http:
-          path: /insert-message
+          path: /create-ad
           method: post
           cors:
             origins:
@@ -75,11 +158,11 @@ functions:
               - Content-Type
             allowCredentials: false
 
-  getMessages:
-    handler: handler.get_messages
+  listAds:
+    handler: handler.list_ads
     events:
       - http:
-          path: /get-messages
+          path: /list-ads
           method: get
           cors:
             origins:
@@ -88,11 +171,24 @@ functions:
               - Content-Type
             allowCredentials: false
 
-  insertProduct:
-    handler: handler.insert_product
+  getAd:
+    handler: handler.get_ad
     events:
       - http:
-          path: /insert-product
+          path: /get-ad
+          method: get
+          cors:
+            origins:
+              - '*'
+            headers:
+              - Content-Type
+            allowCredentials: false
+
+  createComment:
+    handler: handler.create_comment
+    events:
+      - http:
+          path: /create-comment
           method: post
           cors:
             origins:
@@ -101,110 +197,54 @@ functions:
               - Content-Type
             allowCredentials: false
 
-  getProduct:
-    handler: handler.get_products
+  getComments:
+    handler: handler.get_comments
     events:
       - http:
-          path: /get-products
+          path: /get-comments
           method: get
-          cors: true
+          cors:
+            origins:
+              - '*'
+            headers:
+              - Content-Type
+            allowCredentials: false
 
-resources:
-  Resources:
-    ApiGatewayRestApi:
-      Type: AWS::ApiGateway::RestApi
-      Properties:
-        Name: ${self:provider.stage}-api-datahack
-        Description: API ${self:service}
+  createChatMessage:
+    handler: handler.create_chat_message
+    events:
+      - http:
+          path: /create-chat-message
+          method: post
+          cors:
+            origins:
+              - '*'
+            headers:
+              - Content-Type
+            allowCredentials: false
 
-    StaticSiteBucket:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: aws-serverless25
-        PublicAccessBlockConfiguration:
-          BlockPublicAcls: false
-          BlockPublicPolicy: false
-          IgnorePublicAcls: false
-          RestrictPublicBuckets: false
-        CorsConfiguration:
-          CorsRules:
-            -
-              AllowedOrigins:
-                - '*'
-              AllowedHeaders:
-                - '*'
-              AllowedMethods:
-                - GET
-                - PUT
-                - POST
-                - DELETE
-                - HEAD
-              MaxAge: 3000
-        WebsiteConfiguration:
-          IndexDocument: index.html
-        VersioningConfiguration:
-          Status: Enabled
+  getChats:
+    handler: handler.get_chats
+    events:
+      - http:
+          path: /get-chats
+          method: get
+          cors:
+            origins:
+              - '*'
+            headers:
+              - Content-Type
+            allowCredentials: false
 
-    WebsiteDistribution:
-      Type: AWS::CloudFront::Distribution
-      Properties:
-        DistributionConfig:
-          HttpVersion: 'http2'
-          Origins:
-            - DomainName: !GetAtt StaticSiteBucket.DomainName
-              Id: StaticSiteOrigin
-              S3OriginConfig:
-                OriginAccessIdentity: ''
-          Enabled: true
-          DefaultRootObject: index.html
-          DefaultCacheBehavior:
-            TargetOriginId: StaticSiteOrigin
-            ForwardedValues:
-              QueryString: 'false'
-            ViewerProtocolPolicy: redirect-to-https
-
-    StaticSiteBucketPolicy:
-      Type: AWS::S3::BucketPolicy
-      Properties:
-        Bucket: datahack-cloud
-        PolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Principal: "*"
-              Action: "s3:GetObject"
-              Resource: "arn:aws:s3:::aws-serverless25/*"
-
-    CommentsTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: comments
-        AttributeDefinitions:
-          - AttributeName: user
-            AttributeType: S
-          - AttributeName: date
-            AttributeType: S
-        KeySchema:
-          - AttributeName: user
-            KeyType: HASH
-          - AttributeName: date
-            KeyType: RANGE
-        BillingMode: PAY_PER_REQUEST
-      UpdateReplacePolicy: Retain
-
-    AdsTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ads
-        AttributeDefinitions:
-          - AttributeName: user
-            AttributeType: S
-          - AttributeName: date
-            AttributeType: S
-        KeySchema:
-          - AttributeName: user
-            KeyType: HASH
-          - AttributeName: date
-            KeyType: RANGE
-        BillingMode: PAY_PER_REQUEST
-      UpdateReplacePolicy: Retain  
+  getChatMessages:
+    handler: handler.get_chat_messages
+    events:
+      - http:
+          path: /get-chat-messages
+          method: get
+          cors:
+            origins:
+              - '*'
+            headers:
+              - Content-Type
+            allowCredentials: false
