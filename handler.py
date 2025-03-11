@@ -1,122 +1,130 @@
 import json
 import boto3
 from datetime import datetime
+from uuid import uuid4
 
-dynamodb = boto3.resource('dynamodb', region_name='eu-west-1')
+dynamodb = boto3.resource('dynamodb')
+s3 = boto3.client('s3')
+ads_table = dynamodb.Table('ads')
+comments_table = dynamodb.Table('comments')
+chats_table = dynamodb.Table('chats')
+images_bucket = "aws-serverless25-images"
 
-def get_api_endpoint(event, context):
-    try:
-        api_endpoint = event['stageVariables']['API_ENDPOINT']
+def create_ad(event, context):
+    body = json.loads(event['body'])
+    ad_id = str(uuid4())
+    image_url = body.get('image_url', None)
 
+    # Subir la imagen a S3
+    if image_url:
+        s3.upload_file(image_url, images_bucket, f"{ad_id}.jpg")
+        image_url = f"https://{images_bucket}.s3.amazonaws.com/{ad_id}.jpg"
+
+    response = ads_table.put_item(
+        Item={
+            'ad_id': ad_id,
+            'title': body['title'],
+            'description': body['description'],
+            'price': body['price'],
+            'image_url': image_url,
+            'created_at': str(datetime.utcnow())
+        }
+    )
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps({'message': 'Ad created successfully', 'ad_id': ad_id})
+    }
+
+def list_ads(event, context):
+    response = ads_table.scan()
+    return {
+        'statusCode': 200,
+        'body': json.dumps({'ads': response['Items']})
+    }
+
+def get_ad(event, context):
+    ad_id = event['queryStringParameters']['ad_id']
+    response = ads_table.get_item(
+        Key={'ad_id': ad_id}
+    )
+    if 'Item' in response:
         return {
             'statusCode': 200,
-            'headers': {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
-            },
-            'body': json.dumps({'apiUrl': api_endpoint})
+            'body': json.dumps({'ad': response['Item']})
         }
-    except Exception as e:
+    else:
         return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
+            'statusCode': 404,
+            'body': json.dumps({'message': 'Ad not found'})
         }
 
 def create_comment(event, context):
-    try:
-        table_comments = dynamodb.Table('messages')
+    body = json.loads(event['body'])
+    ad_id = body['ad_id']
+    comment_id = str(uuid4())
 
-        body = json.loads(event['body'])
-        user = body['user']
-        message = body['message']
-        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        response = table_comments.put_item(
-            Item={
-                'user': user,
-                'message': message,
-                'date': date
-            }
-        )
-
-        return {
-            'statusCode': 200,
-            'body': json.dumps({'message': 'Message from ' + user + ' succesfully published'})
+    response = comments_table.put_item(
+        Item={
+            'ad_id': ad_id,
+            'comment_id': comment_id,
+            'message': body['message'],
+            'created_at': str(datetime.utcnow())
         }
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
-        }
+    )
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps({'message': 'Comment added successfully', 'comment_id': comment_id})
+    }
 
 def get_comments(event, context):
-    try:
-        table_comments = dynamodb.Table('messages')
+    ad_id = event['queryStringParameters']['ad_id']
+    response = comments_table.query(
+        KeyConditionExpression=boto3.dynamodb.conditions.Key('ad_id').eq(ad_id)
+    )
+    return {
+        'statusCode': 200,
+        'body': json.dumps({'comments': response['Items']})
+    }
 
-        response = table_comments.scan()
-        data = response['Items']
-        
-        while 'LastEvaluatedKey' in response:
-            response = table_comments.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
-            data.extend(response['Items'])
+def create_chat_message(event, context):
+    body = json.loads(event['body'])
+    ad_id = body['ad_id']
+    chat_id = str(uuid4())
 
-        return {
-            'statusCode': 200,
-            'body': json.dumps(data)
+    response = chats_table.put_item(
+        Item={
+            'ad_id': ad_id,
+            'chat_id': chat_id,
+            'message': body['message'],
+            'timestamp': str(datetime.utcnow())
         }
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
-        }
+    )
 
-def create_ad(event, context):
-    try:
-        table_ads = dynamodb.Table('ads')
+    return {
+        'statusCode': 200,
+        'body': json.dumps({'message': 'Chat message sent', 'chat_id': chat_id})
+    }
 
-        body = json.loads(event['body'])
-        user = body['user']
-        product = body['product']
-        description = body['description']
-        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+def get_chats(event, context):
+    ad_id = event['queryStringParameters']['ad_id']
+    response = chats_table.query(
+        KeyConditionExpression=boto3.dynamodb.conditions.Key('ad_id').eq(ad_id)
+    )
+    return {
+        'statusCode': 200,
+        'body': json.dumps({'chats': response['Items']})
+    }
 
-        response = table_ads.put_item(
-            Item={
-                'user': user,
-                'product': product,
-                'description': description,
-                'date': date
-            }
-        )
-
-        return {
-            'statusCode': 200,
-            'body': json.dumps({'product': 'Advertisement from ' + user + ' succesfully published.'})
-        }
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
-        }
-
-def list_ads(event, context):
-    try:
-        table_ads = dynamodb.Table('ads')
-
-        response = table_ads.scan()
-        data = response['Items']
-        
-        while 'LastEvaluatedKey' in response:
-            response = table_ads.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
-            data.extend(response['Items'])
-
-        return {
-            'statusCode': 200,
-            'body': json.dumps(data)
-        }
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
-        }
+def get_chat_messages(event, context):
+    ad_id = event['queryStringParameters']['ad_id']
+    chat_id = event['queryStringParameters']['chat_id']
+    response = chats_table.query(
+        KeyConditionExpression=boto3.dynamodb.conditions.Key('ad_id').eq(ad_id) &
+                              boto3.dynamodb.conditions.Key('chat_id').eq(chat_id)
+    )
+    return {
+        'statusCode': 200,
+        'body': json.dumps({'chat_messages': response['Items']})
+    }
