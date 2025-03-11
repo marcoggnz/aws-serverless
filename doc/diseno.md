@@ -32,30 +32,17 @@ Ejemplo de funciones Lambda:
 - Lambda publicar anuncio: recibe el cuerpo del anuncio (título, descripción, precio, etc.), lo valida y lo guarda en DynamoDB.
 - Lambda agregar comentario: agrega un comentario al anuncio correspondiente en DynamoDB.
 
-3) Base de Datos DynamoDB
-Se puede crear una tabla llamada "ads" en DynamoDB. Cada anuncio tendrá un ID único (ad_id) y los comentarios estarán relacionados con el ID de cada anuncio.
-Estructura de la tabla DynamoDB:
-- Partición de claves: ad_id para identificar un anuncio.
-- Atributos: title, description, price, created_at, comments (array de comentarios), etc.
-- Utilizamos DynamoDB Streams para que los nuevos anuncios sean indexados de manera eficiente.
-
-4) Almacenamiento de Imágenes en S3
+## Almacenamiento de Imágenes en S3
 Cuando un usuario publica un anuncio con una imagen, la imagen se sube a un bucket S3 asociado. El enlace de la imagen se guarda junto con el anuncio en DynamoDB.
 Se puede usar una política en S3 para controlar los permisos de acceso, de manera que solo se permita la lectura pública de las imágenes.
 
-7) Implementación de la Caducidad de Anuncios
-La caducidad de los anuncios se puede manejar de las siguientes maneras:
-- TTL (Time To Live) en DynamoDB: Usar la característica TTL de DynamoDB para eliminar automáticamente los anuncios después de un período determinado (por ejemplo, 30 días).
-- Lambda Scheduled: Usar AWS Lambda con CloudWatch Events para eliminar los anuncios caducados.
-
 ## Automatización y Minimización de Costes
-7) Minimización de Costes
+Con el uso de serviicos serverless se garantiza la minimización de costos:
 - Uso de funciones Lambda para procesar las solicitudes en lugar de instancias EC2. Lambda solo se ejecuta cuando se necesita, lo que elimina los costos de infraestructura cuando no hay tráfico.
 - DynamoDB permite escalar automáticamente según el tráfico, y el modelo de precios basado en operaciones es económico cuando no hay muchas solicitudes.
 - S3 solo cobra por el almacenamiento real utilizado y las solicitudes realizadas, lo que resulta en costos muy bajos.
 
 ## Bases de datos en DynamoDB
-
 Tabla <strong>ads</strong>: almacena los anuncios publicados
 - PK: `ad_id` (string): ID del anuncio (PARTITION KEY)
 - `title` (string): título del anuncio
@@ -98,7 +85,7 @@ Ejemplo de un item en la tabla:
 }
 ```
 
-Tabla <strong>CHAT</strong>: almacena los mensajes de un chat
+Tabla <strong>chats</strong>: almacena los mensajes de un chat
 - `ad_id` (string): ID del anuncio al que pertenece el chat (PK)
 - `chat_id` (string): ID del chat (SK)
 - `message` (string): texto del mensaje
@@ -118,6 +105,7 @@ Tabla <strong>CHAT</strong>: almacena los mensajes de un chat
 Por falta de tiempo, hay ciertas funcionalidades que no han sido implementadas. Se detallan a continuación algunas de ellas:
 ### Web
 Los siguientes servicios son útiles para mejorar la entrega de contenido web, la gestión de tráfico y el acceso a tu aplicación desde cualquier lugar:
+
 <strong>Amazon CloudFront</strong>: CloudFront es un Content Delivery Network (CDN) que mejora la entrega de contenido estático y dinámico, como imágenes, JavaScript, CSS, y HTML.
 Implementación:
 CloudFront se utilizaría para distribuir el sitio web estático de S3 de manera eficiente, reduciendo la latencia y mejorando la velocidad de carga para los usuarios.
@@ -133,15 +121,17 @@ Para asegurar que los anuncios caduquen automáticamente después de un tiempo d
 
 <strong>Amazon DynamoDB (TTL - Time to Live)</strong>: DynamoDB tiene una función llamada Time to Live (TTL) que permite definir una fecha y hora para que los elementos en una tabla caduquen automáticamente.
 Se puede configurar el atributo expirationDate en la tabla ads y habilitar TTL en DynamoDB para que, una vez alcanzada la fecha de expiración, los anuncios se eliminen automáticamente de la base de datos, ayudando a mantener la eficiencia y reduciendo los costos operativos.
+
 <strong>AWS Lambda + CloudWatch Events</strong>: para eliminar anuncios caducados, se podría configurar una función Lambda que se ejecute periódicamente (por ejemplo, una vez al día) utilizando CloudWatch Events.
 Esta función Lambda podría escanear la tabla de anuncios, verificar las fechas de caducidad, y eliminar los anuncios que ya han caducado.
 
 ### Búsqueda de anuncios
 Para mejorar la búsqueda de anuncios en tu aplicación, especialmente si necesitas realizar búsquedas más complejas o con requisitos de alto rendimiento, estos servicios serían útiles:
 
-Amazon OpenSearch Service:: OpenSearch es un motor de búsqueda y análisis en tiempo real basado en Elasticsearch, ideal para implementar características avanzadas de búsqueda en tu aplicación.
+Amazon OpenSearch Service: OpenSearch es un motor de búsqueda y análisis en tiempo real basado en Elasticsearch, ideal para implementar características avanzadas de búsqueda en tu aplicación.
 - Implementación: se podría indexar todos los anuncios en un clúster de OpenSearch, permitiendo a los usuarios realizar búsquedas de anuncios de forma rápida y eficiente.
 OpenSearch soporta búsqueda por texto completo, filtrado de resultados, búsquedas facetas, y mucho más, lo que permitiría una búsqueda avanzada, como buscar por palabra clave, precio, ubicación, etc.
+
 AWS Lambda (con OpenSearch): AWS Lambda se integraría con OpenSearch para realizar consultas dinámicas o para almacenar los resultados de la búsqueda de anuncios.
 - Implementación: Se crearían funciones Lambda que reciban las solicitudes de búsqueda desde el frontend y consulten OpenSearch para obtener los anuncios que coincidan con los criterios de búsqueda, devolviendo los resultados a los usuarios.
 
@@ -149,11 +139,11 @@ AWS Lambda (con OpenSearch): AWS Lambda se integraría con OpenSearch para reali
 El control de acceso y la gestión de identidades son fundamentales para asegurar que solo los usuarios autorizados puedan acceder a ciertas funcionalidades, como publicar anuncios o enviar mensajes en los chats.
 
 <strong>Amazon Cognito</strong>: Cognito es un servicio gestionado de autenticación y autorización de usuarios. Permite gestionar el inicio de sesión, el registro, la verificación de direcciones de correo electrónico, y la gestión de contraseñas de forma segura.
-- Implementación: se utilizaría Cognito para permitir que los usuarios se registren, inicien sesión y accedan a funcionalidades restringidas de la aplicación, como publicar anuncios, enviar mensajes en los chats, o acceder a información privada.
-Cognito se integra con AWS API Gateway para proteger los endpoints de la API, asegurando que solo los usuarios autenticados puedan realizar ciertas operaciones.
-Se puede usar Cognito User Pools para gestionar la autenticación de usuarios y Cognito Identity Pools para obtener credenciales temporales para interactuar con otros servicios de AWS, como S3 o DynamoDB.
+- Implementación: se utilizaría Cognito para permitir que los usuarios se registren, inicien sesión y accedan a funcionalidades restringidas de la aplicación, como publicar anuncios, enviar mensajes en los chats, o acceder a información privada. Cognito se integra con AWS API Gateway para proteger los endpoints de la API, asegurando que solo los usuarios autenticados puedan realizar ciertas operaciones. Se puede usar Cognito User Pools para gestionar la autenticación de usuarios y Cognito Identity Pools para obtener credenciales temporales para interactuar con otros servicios de AWS, como S3 o DynamoDB.
+
 <strong>AWS IAM (Identity and Access Management)</strong>: IAM  permite crear y gestionar políticas de acceso para usuarios y recursos de AWS.
 - Implementación: se usaría IAM para definir roles y permisos para las funciones Lambda que gestionan los anuncios, comentarios y chats, asegurándose de que cada función Lambda tenga acceso solo a los recursos necesarios (por ejemplo, solo la tabla de ads para la función que maneja anuncios).
 IAM también se utilizaría para gestionar los permisos en DynamoDB y en el bucket de S3 donde se almacenan las imágenes de los anuncios.
+
 <strong>API Gateway con Autorización Cognito</strong>: API Gateway permite exponer las funciones Lambda a través de HTTP, y se puede integrar con Cognito para garantizar que solo los usuarios autenticados puedan acceder a ciertos endpoints.
 - Implementación: se configuraría API Gateway para que ciertos endpoints (como la creación de anuncios o el envío de mensajes) estén protegidos por autenticación Cognito. Esto garantizará que solo los usuarios autenticados puedan interactuar con estos servicios.
