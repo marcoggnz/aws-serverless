@@ -10,12 +10,6 @@
 - <strong>Amazon S3</strong>: almacena las imágenes asociadas a los anuncios, por ejemplo, fotos de productos. S3 es un servicio de almacenamiento de objetos que puede escalar fácilmente y es muy económico para almacenar imágenes.
 - <strong>Amazon CloudWatch</strong>: servicio utilizado para monitorización de las funciones Lambda, visualización de logs y seguimiento del rendimiento de la aplicación.
 
-## Servicios adicionales que no han sido implementados
-Aunque por falta de tiempo los siguientes servicios no han sido implementados en el despliegue de la aplicación, a continuación se detalla la función que tendrían:
-- <strong>Amazon S3</strong> (hosting estático): alojamiento del frontend estático, desarrollado en HTML. S3 tiene un bajo coste y es ideal para hosting de sitios estáticos.
-- <strong>Amazon CloudFront</strong>: puede ser utilizado como red de distribución de contenido (CDN) para mejorar la entrega de contenido estático (imágenes, CSS, JS) a los usuarios.
-- <strong>Amazon Cognito</strong>: gestión de usuarios, permitiendo que se registren, inicien sesión y publiquen anuncios. Cognito se puede configurar para proporcionar tokens de autenticación que se usarán en las peticiones al backend (API Gateway).
-
 ## API Gateway y funciones Lambda
 Para el funcionamiento del backend se ha implementado una REST API, que mediante enpoints y el servicio API Gateway, se realizan las diferentes acciones de la aplicación. Se trata de una arquitectura estándar dentro de AWS cuando se trata de aplicaciones serverless.
 `POST /ads`: creación de un anuncio
@@ -123,9 +117,43 @@ Tabla <strong>CHAT</strong>: almacena los mensajes de un chat
 ## Implementaciones de diseño adicionales
 Por falta de tiempo, hay ciertas funcionalidades que no han sido implementadas. Se detallan a continuación algunas de ellas:
 ### Web
+Los siguientes servicios son útiles para mejorar la entrega de contenido web, la gestión de tráfico y el acceso a tu aplicación desde cualquier lugar:
+<strong>Amazon CloudFront</strong>: CloudFront es un Content Delivery Network (CDN) que mejora la entrega de contenido estático y dinámico, como imágenes, JavaScript, CSS, y HTML.
+Implementación:
+CloudFront se utilizaría para distribuir el sitio web estático de S3 de manera eficiente, reduciendo la latencia y mejorando la velocidad de carga para los usuarios.
+CloudFront ofrece características avanzadas como la configuración de caché, la integración con certificados SSL para HTTPS, y la protección DDoS a través de AWS Shield.
+
+<strong>Amazon Route 53</strong>: es el servicio de DNS de AWS, que  permite gestionar el enrutamiento de tráfico en Internet hacia la aplicación.
+Implementación:
+Si se necesita asociar el dominio personalizado (por ejemplo, www.tuweb.com) a la aplicación, se usaría Route 53 para configurar los registros DNS.
+Además, se puede utilizar Route 53 para crear políticas de enrutamiento basadas en geolocalización o en la latencia de la red, lo que  permite dirigir a los usuarios a la instancia más cercana de tu aplicación.
 
 ### Caducidad automática de anuncios
+Para asegurar que los anuncios caduquen automáticamente después de un tiempo determinado, puedes implementar una combinación de servicios para gestionar el ciclo de vida de los datos:
+
+<strong>Amazon DynamoDB (TTL - Time to Live)</strong>: DynamoDB tiene una función llamada Time to Live (TTL) que permite definir una fecha y hora para que los elementos en una tabla caduquen automáticamente.
+Se puede configurar el atributo expirationDate en la tabla ads y habilitar TTL en DynamoDB para que, una vez alcanzada la fecha de expiración, los anuncios se eliminen automáticamente de la base de datos, ayudando a mantener la eficiencia y reduciendo los costos operativos.
+<strong>AWS Lambda + CloudWatch Events</strong>: para eliminar anuncios caducados, se podría configurar una función Lambda que se ejecute periódicamente (por ejemplo, una vez al día) utilizando CloudWatch Events.
+Esta función Lambda podría escanear la tabla de anuncios, verificar las fechas de caducidad, y eliminar los anuncios que ya han caducado.
 
 ### Búsqueda de anuncios
+Para mejorar la búsqueda de anuncios en tu aplicación, especialmente si necesitas realizar búsquedas más complejas o con requisitos de alto rendimiento, estos servicios serían útiles:
 
-### Control de acces mediante usuarios
+Amazon OpenSearch Service:: OpenSearch es un motor de búsqueda y análisis en tiempo real basado en Elasticsearch, ideal para implementar características avanzadas de búsqueda en tu aplicación.
+- Implementación: se podría indexar todos los anuncios en un clúster de OpenSearch, permitiendo a los usuarios realizar búsquedas de anuncios de forma rápida y eficiente.
+OpenSearch soporta búsqueda por texto completo, filtrado de resultados, búsquedas facetas, y mucho más, lo que permitiría una búsqueda avanzada, como buscar por palabra clave, precio, ubicación, etc.
+AWS Lambda (con OpenSearch): AWS Lambda se integraría con OpenSearch para realizar consultas dinámicas o para almacenar los resultados de la búsqueda de anuncios.
+- Implementación: Se crearían funciones Lambda que reciban las solicitudes de búsqueda desde el frontend y consulten OpenSearch para obtener los anuncios que coincidan con los criterios de búsqueda, devolviendo los resultados a los usuarios.
+
+### Control de acceso mediante usuarios
+El control de acceso y la gestión de identidades son fundamentales para asegurar que solo los usuarios autorizados puedan acceder a ciertas funcionalidades, como publicar anuncios o enviar mensajes en los chats.
+
+<strong>Amazon Cognito</strong>: Cognito es un servicio gestionado de autenticación y autorización de usuarios. Permite gestionar el inicio de sesión, el registro, la verificación de direcciones de correo electrónico, y la gestión de contraseñas de forma segura.
+- Implementación: se utilizaría Cognito para permitir que los usuarios se registren, inicien sesión y accedan a funcionalidades restringidas de la aplicación, como publicar anuncios, enviar mensajes en los chats, o acceder a información privada.
+Cognito se integra con AWS API Gateway para proteger los endpoints de la API, asegurando que solo los usuarios autenticados puedan realizar ciertas operaciones.
+Se puede usar Cognito User Pools para gestionar la autenticación de usuarios y Cognito Identity Pools para obtener credenciales temporales para interactuar con otros servicios de AWS, como S3 o DynamoDB.
+<strong>AWS IAM (Identity and Access Management)</strong>: IAM  permite crear y gestionar políticas de acceso para usuarios y recursos de AWS.
+- Implementación: se usaría IAM para definir roles y permisos para las funciones Lambda que gestionan los anuncios, comentarios y chats, asegurándose de que cada función Lambda tenga acceso solo a los recursos necesarios (por ejemplo, solo la tabla de ads para la función que maneja anuncios).
+IAM también se utilizaría para gestionar los permisos en DynamoDB y en el bucket de S3 donde se almacenan las imágenes de los anuncios.
+<strong>API Gateway con Autorización Cognito</strong>: API Gateway permite exponer las funciones Lambda a través de HTTP, y se puede integrar con Cognito para garantizar que solo los usuarios autenticados puedan acceder a ciertos endpoints.
+- Implementación: se configuraría API Gateway para que ciertos endpoints (como la creación de anuncios o el envío de mensajes) estén protegidos por autenticación Cognito. Esto garantizará que solo los usuarios autenticados puedan interactuar con estos servicios.
